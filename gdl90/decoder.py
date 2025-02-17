@@ -36,8 +36,9 @@ class Decoder(object):
         self.dayStart = datetime.date.today()  # client apps SHOULD set this
         self.currtime = datetime.datetime.now(datetime.timezone.utc)
         self.heartbeatInterval = datetime.timedelta(seconds=1)
-        self.flag = 0x7e  # default flag byte for GDL-90 messages
-    
+        #self.flag = 0x7e  # default flag byte for GDL-90 messages
+        self.flag = 0xFF  # flag byte for GDL-90 messages
+
     
     def addBytes(self, data):
         """add raw input bytes for decode processing"""
