@@ -36,6 +36,7 @@ class Decoder(object):
         self.dayStart = datetime.date.today()  # client apps SHOULD set this
         self.currtime = datetime.datetime.now(datetime.timezone.utc)
         self.heartbeatInterval = datetime.timedelta(seconds=1)
+        self.flag = 0x7e  # default flag byte for GDL-90 messages
     
     
     def addBytes(self, data):
@@ -65,16 +66,17 @@ class Decoder(object):
                 return
             
             # We expect 0x7e at the head of the buffer
-            if self.inputBuffer[0] != 0x7e:
+            # But could find flag 
+            if self.inputBuffer[0] != self.flag:
                 # failed assertion; we are not synchronized anymore
                 #self._log("synchronization lost")
                 if not self._resynchronizeParser():
                     # false if we empty the input buffer
                     return
             
-            # Look to see if we have an ending 0x7e marker yet
+            # Look to see if we have an ending self.flag marker yet
             try:
-                i = self.inputBuffer.index(0x7e, 1)
+                i = self.inputBuffer.index(self.flag, 1)
             except ValueError:
                 # no end marker found yet
                 #self._log("no end marker found; leaving parser for now")
@@ -103,21 +105,21 @@ class Decoder(object):
                 return False
             
             # found end of a message and beginning of next
-            if self.inputBuffer[0] == 0x7e and self.inputBuffer[1] == 0x7e:
+            if self.inputBuffer[0] == self.flag and self.inputBuffer[1] == self.flag:
                 # remove end marker from previous message
                 del(self.inputBuffer[0:1])
                 self.parserSynchronized = True
                 #self._log("parser is synchronized (end:start)")
                 return True
             
-            if self.inputBuffer[0] == 0x7e:
+            if self.inputBuffer[0] == self.flag:
                 self.parserSynchronized = True
                 #self._log("parser is synchronized (start)")
                 return True
             
             # remove everything up to first 0x7e or end of buffer
             try:
-                i = self.inputBuffer.index(0x7e)
+                i = self.inputBuffer.index(self.flag)
                 #self._log("removing leading bytes before marker")
             except ValueError:
                 # did not find 0x7e, so blank the whole buffer
